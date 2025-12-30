@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import Playground from './pages/Playground'
 import GettingStarted from './pages/docs/GettingStarted'
 import Upload from './pages/docs/Upload'
 import DropZonePage from './pages/docs/DropZone'
@@ -16,6 +17,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
+        <Route path="playground" element={<Playground />} />
         <Route path="docs/getting-started" element={<GettingStarted />} />
         <Route path="docs/upload" element={<Upload />} />
         <Route path="docs/dropzone" element={<DropZonePage />} />

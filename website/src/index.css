@@ -1,42 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-sans);
-  @apply bg-zinc-950 text-zinc-100 antialiased;
+  @apply antialiased;
 }
 
-code, pre {
+/* Theme-based body styles */
+.dark body,
+.dark {
+  @apply bg-zinc-950 text-zinc-100;
+}
+
+.light body,
+.light {
+  @apply bg-white text-zinc-900;
+}
+
+/* Monospace font for code */
+code, pre, .font-mono {
   font-family: var(--font-mono);
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
+/* Custom scrollbar - Dark theme */
+.dark ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-::-webkit-scrollbar-track {
+.dark ::-webkit-scrollbar-track {
   @apply bg-zinc-900;
 }
 
-::-webkit-scrollbar-thumb {
+.dark ::-webkit-scrollbar-thumb {
   @apply bg-zinc-700 rounded-full;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.dark ::-webkit-scrollbar-thumb:hover {
   @apply bg-zinc-600;
+}
+
+/* Custom scrollbar - Light theme */
+.light ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.light ::-webkit-scrollbar-track {
+  @apply bg-zinc-100;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 rounded-full;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-400;
 }
 
 /* Code block styles */
 .code-block {
-  @apply bg-zinc-900 rounded-lg overflow-hidden;
+  @apply rounded-lg overflow-hidden;
+}
+
+.dark .code-block {
+  @apply bg-zinc-900;
+}
+
+.light .code-block {
+  @apply bg-zinc-50 border border-zinc-200;
 }
 
 .code-block pre {
@@ -45,15 +90,19 @@ code, pre {
 
 /* Gradient text */
 .gradient-text {
-  @apply bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent;
 }
 
-/* Glow effect */
-.glow {
+/* Glow effects */
+.glow-violet {
   box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
 }
 
-/* Animation */
+.glow-purple {
+  box-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
+}
+
+/* Animations */
 @keyframes float {
   0%, 100% {
     transform: translateY(0);
@@ -65,4 +114,129 @@ code, pre {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+/* Selection styles */
+.dark ::selection {
+  @apply bg-violet-500/30;
+}
+
+.light ::selection {
+  @apply bg-violet-200;
+}
+
+/* Focus styles */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-violet-500;
+}
+
+/* Smooth transitions */
+.transition-theme {
+  @apply transition-colors duration-200;
+}
+
+/* Prose styles for documentation */
+.prose-dark {
+  @apply text-zinc-300;
+}
+
+.prose-dark h1,
+.prose-dark h2,
+.prose-dark h3,
+.prose-dark h4 {
+  @apply text-white;
+}
+
+.prose-dark a {
+  @apply text-violet-400 hover:text-violet-300;
+}
+
+.prose-dark code {
+  @apply bg-zinc-800 text-violet-300 px-1.5 py-0.5 rounded;
+}
+
+.prose-dark pre {
+  @apply bg-zinc-900 border border-zinc-800;
+}
+
+.prose-light {
+  @apply text-zinc-600;
+}
+
+.prose-light h1,
+.prose-light h2,
+.prose-light h3,
+.prose-light h4 {
+  @apply text-zinc-900;
+}
+
+.prose-light a {
+  @apply text-violet-600 hover:text-violet-700;
+}
+
+.prose-light code {
+  @apply bg-zinc-100 text-violet-600 px-1.5 py-0.5 rounded;
+}
+
+.prose-light pre {
+  @apply bg-zinc-50 border border-zinc-200;
+}
+
+/* Drop zone animations */
+.dropzone-pulse {
+  animation: dropzone-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dropzone-pulse {
+  0%, 100% {
+    border-color: rgba(139, 92, 246, 0.5);
+  }
+  50% {
+    border-color: rgba(139, 92, 246, 1);
+  }
+}
+
+/* Line numbers in code blocks */
+.line-number {
+  @apply select-none text-right pr-4 text-zinc-500;
+  min-width: 3rem;
+}
+
+/* Highlighted code lines */
+.highlighted-line {
+  @apply bg-violet-500/10 border-l-2 border-violet-500;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: calc(1rem - 2px);
+  padding-right: 1rem;
 }
