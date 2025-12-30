@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FileKit - Basic Upload Example</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-active {
+      border-color: #007bff;
+      background: #f0f7ff;
+    }
+
+    .drop-zone.drag-accept {
+      border-color: #28a745;
+      background: #f0fff4;
+    }
+
+    .drop-zone.drag-reject {
+      border-color: #dc3545;
+      background: #fff5f5;
+    }
+
+    .file-list {
+      margin-top: 20px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .file-info {
+      flex: 1;
+    }
+
+    .file-name {
+      font-weight: 500;
+    }
+
+    .file-size {
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .progress-bar {
+      width: 100px;
+      height: 6px;
+      background: #eee;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-left: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #007bff;
+      transition: width 0.2s;
+    }
+
+    .status {
+      margin-left: 10px;
+      font-size: 0.875rem;
+    }
+
+    .status.completed { color: #28a745; }
+    .status.error { color: #dc3545; }
+    .status.uploading { color: #007bff; }
+  </style>
+</head>
+<body>
+  <h1>FileKit Basic Upload</h1>
+
+  <div id="dropzone" class="drop-zone">
+    <p>Drag & drop files here or click to select</p>
+    <p style="color: #666; font-size: 0.875rem;">Supports images and PDFs up to 10MB</p>
+  </div>
+
+  <div id="file-list" class="file-list"></div>
+
+  <script type="module">
+    import { createDropZone, formatFileSize } from '../dist/index.js'
+
+    const dropZoneEl = document.getElementById('dropzone')
+    const fileListEl = document.getElementById('file-list')
+
+    // Create the drop zone
+    const dropZone = createDropZone(dropZoneEl, {
+      endpoint: '/api/upload',
+      maxFileSize: 10 * 1024 * 1024, // 10MB
+      allowedTypes: ['image/*', 'application/pdf'],
+      autoUpload: true,
+
+      // CSS classes for drag states
+      activeClass: 'drag-active',
+      acceptClass: 'drag-accept',
+      rejectClass: 'drag-reject',
+
+      // Callbacks
+      onDrop: (files) => {
+        console.log('Files dropped:', files)
+        renderFileList()
+      }
+    })
+
+    // Subscribe to upload events
+    dropZone.uploader.on('progress', () => renderFileList())
+    dropZone.uploader.on('complete', (file, response) => {
+      console.log('Upload complete:', file.name, response)
+      renderFileList()
+    })
+    dropZone.uploader.on('error', (file, error) => {
+      console.error('Upload error:', file.name, error)
+      renderFileList()
+    })
+
+    function createFileItem(file) {
+      const item = document.createElement('div')
+      item.className = 'file-item'
+
+      const info = document.createElement('div')
+      info.className = 'file-info'
+
+      const name = document.createElement('div')
+      name.className = 'file-name'
+      name.textContent = file.name
+
+      const size = document.createElement('div')
+      size.className = 'file-size'
+      size.textContent = formatFileSize(file.size)
+
+      info.appendChild(name)
+      info.appendChild(size)
+
+      const progressBar = document.createElement('div')
+      progressBar.className = 'progress-bar'
+
+      const progressFill = document.createElement('div')
+      progressFill.className = 'progress-fill'
+      progressFill.style.width = file.progress + '%'
+
+      progressBar.appendChild(progressFill)
+
+      const status = document.createElement('div')
+      status.className = 'status ' + file.status
+      status.textContent = file.status
+
+      item.appendChild(info)
+      item.appendChild(progressBar)
+      item.appendChild(status)
+
+      return item
+    }
+
+    function renderFileList() {
+      const files = dropZone.uploader.getFiles()
+
+      // Clear existing content
+      while (fileListEl.firstChild) {
+        fileListEl.removeChild(fileListEl.firstChild)
+      }
+
+      // Add file items
+      files.forEach(file => {
+        fileListEl.appendChild(createFileItem(file))
+      })
+    }
+  </script>
+</body>
+</html>

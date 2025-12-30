@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FileKit - Chunked Upload Example</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+
+    .upload-area {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .file-item {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .file-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .file-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .file-size {
+      color: #666;
+    }
+
+    .progress-container {
+      background: #eee;
+      border-radius: 4px;
+      height: 20px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #007bff, #00d4ff);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .chunk-info {
+      display: flex;
+      gap: 20px;
+      font-size: 0.875rem;
+      color: #666;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+
+    .btn-pause { background: #ffc107; color: #000; }
+    .btn-resume { background: #28a745; color: #fff; }
+    .btn-cancel { background: #dc3545; color: #fff; }
+    .btn-retry { background: #17a2b8; color: #fff; }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-uploading { background: #cce5ff; color: #004085; }
+    .status-paused { background: #fff3cd; color: #856404; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-pending { background: #e2e3e5; color: #383d41; }
+  </style>
+</head>
+<body>
+  <h1>Chunked Upload with Resume</h1>
+  <p>Upload large files with chunked upload support. Pause, resume, and retry uploads.</p>
+
+  <div class="upload-area">
+    <input type="file" id="file-input" style="display: none">
+    <button onclick="document.getElementById('file-input').click()">Select Large File</button>
+    <p style="margin-top: 10px; color: #666;">Files are uploaded in 5MB chunks with 3 parallel connections</p>
+  </div>
+
+  <div id="file-list"></div>
+
+  <script type="module">
+    import { createUploader, formatFileSize } from '../dist/index.js'
+
+    // Create uploader with chunked upload enabled
+    const uploader = createUploader({
+      endpoint: '/api/upload/chunk',
+      chunked: true,
+      chunkSize: 5 * 1024 * 1024, // 5MB chunks
+      parallelChunks: 3,
+      retryChunks: 3,
+    })
+
+    const fileInput = document.getElementById('file-input')
+    const fileListEl = document.getElementById('file-list')
+
+    fileInput.addEventListener('change', (e) => {
+      const files = e.target.files
+      if (files.length > 0) {
+        uploader.addFiles(files)
+        uploader.uploadAll()
+      }
+      e.target.value = ''
+    })
+
+    // Subscribe to events
+    uploader.on('add', renderFiles)
+    uploader.on('progress', renderFiles)
+    uploader.on('chunkComplete', (file, chunkIndex, totalChunks) => {
+      console.log(`Chunk ${chunkIndex + 1}/${totalChunks} complete for ${file.name}`)
+      renderFiles()
+    })
+    uploader.on('complete', renderFiles)
+    uploader.on('error', renderFiles)
+    uploader.on('pause', renderFiles)
+    uploader.on('resume', renderFiles)
+
+    function createButton(text, className, onClick) {
+      const btn = document.createElement('button')
+      btn.textContent = text
+      btn.className = className
+      btn.addEventListener('click', onClick)
+      return btn
+    }
+
+    function createFileItem(file) {
+      const state = uploader.getState(file.id)
+      const chunkText = file.totalChunks
+        ? `Chunk ${(file.currentChunk || 0) + 1} of ${file.totalChunks}`
+        : 'Preparing...'
+
+      const item = document.createElement('div')
+      item.className = 'file-item'
+
+      // Header
+      const header = document.createElement('div')
+      header.className = 'file-header'
+
+      const nameContainer = document.createElement('div')
+      const nameSpan = document.createElement('span')
+      nameSpan.className = 'file-name'
+      nameSpan.textContent = file.name
+
+      const sizeSpan = document.createElement('span')
+      sizeSpan.className = 'file-size'
+      sizeSpan.textContent = ' (' + formatFileSize(file.size) + ')'
+
+      nameContainer.appendChild(nameSpan)
+      nameContainer.appendChild(sizeSpan)
+
+      const statusBadge = document.createElement('span')
+      statusBadge.className = 'status-badge status-' + file.status
+      statusBadge.textContent = file.status
+
+      header.appendChild(nameContainer)
+      header.appendChild(statusBadge)
+
+      // Progress bar
+      const progressContainer = document.createElement('div')
+      progressContainer.className = 'progress-container'
+
+      const progressBar = document.createElement('div')
+      progressBar.className = 'progress-bar'
+      progressBar.style.width = file.progress + '%'
+      if (file.progress > 10) {
+        progressBar.textContent = Math.round(file.progress) + '%'
+      }
+
+      progressContainer.appendChild(progressBar)
+
+      // Chunk info
+      const chunkInfo = document.createElement('div')
+      chunkInfo.className = 'chunk-info'
+
+      const chunkSpan = document.createElement('span')
+      chunkSpan.textContent = chunkText
+
+      const bytesSpan = document.createElement('span')
+      bytesSpan.textContent = formatFileSize(file.uploadedBytes) + ' / ' + formatFileSize(file.size)
+
+      chunkInfo.appendChild(chunkSpan)
+      chunkInfo.appendChild(bytesSpan)
+
+      if (state && state.speed) {
+        const speedSpan = document.createElement('span')
+        speedSpan.textContent = 'Speed: ' + formatFileSize(state.speed) + '/s'
+        chunkInfo.appendChild(speedSpan)
+      }
+
+      // Controls
+      const controls = document.createElement('div')
+      controls.className = 'controls'
+
+      if (file.status === 'uploading') {
+        controls.appendChild(createButton('Pause', 'btn-pause', () => uploader.pause(file.id)))
+      }
+      if (file.status === 'paused') {
+        controls.appendChild(createButton('Resume', 'btn-resume', () => uploader.resume(file.id)))
+      }
+      if (file.status === 'error') {
+        controls.appendChild(createButton('Retry', 'btn-retry', () => uploader.retry(file.id)))
+      }
+      if (['uploading', 'paused', 'pending'].includes(file.status)) {
+        controls.appendChild(createButton('Cancel', 'btn-cancel', () => uploader.cancel(file.id)))
+      }
+
+      item.appendChild(header)
+      item.appendChild(progressContainer)
+      item.appendChild(chunkInfo)
+      item.appendChild(controls)
+
+      return item
+    }
+
+    function renderFiles() {
+      const files = uploader.getFiles()
+
+      // Clear existing content
+      while (fileListEl.firstChild) {
+        fileListEl.removeChild(fileListEl.firstChild)
+      }
+
+      // Add file items
+      files.forEach(file => {
+        fileListEl.appendChild(createFileItem(file))
+      })
+    }
+  </script>
+</body>
+</html>
