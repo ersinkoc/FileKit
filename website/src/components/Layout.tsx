@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Upload, Menu, X, Github, ExternalLink } from 'lucide-react'
+import { Upload, Menu, X, Github } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
